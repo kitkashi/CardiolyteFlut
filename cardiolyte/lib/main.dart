@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import 'package:syncfusion_flutter_charts/sparkcharts.dart';
 
 void main() {
   return runApp(_ChartApp());
@@ -24,34 +23,34 @@ class _MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<_MyHomePage> {
-  List<_SalesData> data = [
-    _SalesData('Jan', 35),
-    _SalesData('Feb', 28),
-    _SalesData('Mar', 34),
-    _SalesData('Apr', 32),
-    _SalesData('May', 40),
-  ];
+
+List<EkgSampleData> ekgData = <EkgSampleData>[
+  EkgSampleData(x: 1, y: 30),
+  EkgSampleData(x: 3, y: 13),
+  EkgSampleData(x: 5, y: 80),
+  EkgSampleData(x: 7, y: 30),
+  EkgSampleData(x: 9, y: 72)
+];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Syncfusion Flutter chart')),
       body: Column(
         children: [
           //Initialize the chart widget
           SfCartesianChart(
-            primaryXAxis: CategoryAxis(),
+            primaryXAxis: NumericAxis(),
+            primaryYAxis: NumericAxis(),
             // Chart title
-            title: ChartTitle(text: 'Half yearly sales analysis'),
-            // Enable legend
-            legend: Legend(isVisible: true),
+            title: ChartTitle(text: 'Ekg Chart'),
             // Enable tooltip
-            tooltipBehavior: TooltipBehavior(enable: true),
-            series: <CartesianSeries<_SalesData, String>>[
-              LineSeries<_SalesData, String>(
-                dataSource: data,
-                xValueMapper: (_SalesData sales, _) => sales.year,
-                yValueMapper: (_SalesData sales, _) => sales.sales,
-                name: 'Sales',
+            // tooltipBehavior: TooltipBehavior(enable: true),
+            series: <CartesianSeries<EkgSampleData, num>>[
+              LineSeries<EkgSampleData, num>(
+                dataSource: ekgData,
+                xValueMapper: (EkgSampleData ekgData, _) => ekgData.x,
+                yValueMapper: (EkgSampleData ekgData, _) => ekgData.y,
+                // name: 'Reading',
                 // Enable data label
                 dataLabelSettings: DataLabelSettings(isVisible: true),
               ),
@@ -63,9 +62,10 @@ class _MyHomePageState extends State<_MyHomePage> {
   }
 }
 
-class _SalesData {
-  _SalesData(this.year, this.sales);
 
-  final String year;
-  final double sales;
+class EkgSampleData {
+  EkgSampleData({this.x, this.y});
+
+  num? x;
+  num? y;
 }
