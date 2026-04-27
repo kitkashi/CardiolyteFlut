@@ -1,9 +1,16 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
-
+//1000 ms in a second
+//suggested is 100HZ
+const int refreshRateMs=10;
+//100 points shown a second
+//i want to show a 10 second strip
+const int secondsDisplayed=5;
+const int shownGraphPoints=(refreshRateMs*10)*(secondsDisplayed);
 //instantiate random number
 final Random random = Random();
 
@@ -56,16 +63,17 @@ class LiveEkgChart extends StatefulWidget {
 
 class _LiveEkgChartState extends State<LiveEkgChart> {
   int i = 0;
-  List<EkgSampleData>? ekgData;
+  late List<EkgSampleData>? ekgData;
   ChartSeriesController<EkgSampleData, num>? _chartSeriesController;
   Timer? _timer;
 
   _LiveEkgChartState() {
     _timer = Timer.periodic
-          (const Duration(milliseconds: 50),
+          (const Duration(milliseconds: refreshRateMs),
         _updateDataSource);
   }
 
+  late ZoomPanBehavior zoomPanBehavior;
   @override
   void initState() {
     ekgData = <EkgSampleData>[
@@ -73,13 +81,19 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
       EkgSampleData(x: 0, y: 0),
       // EkgSampleData(x: 9, y: 72),
     ];
+    zoomPanBehavior = ZoomPanBehavior(
+        enablePanning: true
+    );
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return SfCartesianChart(
-      primaryXAxis: NumericAxis(),
+      zoomPanBehavior: zoomPanBehavior,
+      primaryXAxis: NumericAxis(
+        autoScrollingDelta:shownGraphPoints,
+      ),
       primaryYAxis: NumericAxis(),
       // Chart title
       title: ChartTitle(text: 'Ekg Chart'),
@@ -103,12 +117,10 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
     );
   }
   void _updateDataSource(Timer _) {
-    print("i am _updateDataSource");
-
     print(i);
     ekgData?.add(EkgSampleData(x: ++i, y: _getRandomInt(10, 100)));
     //chooses how many points to display on the screen at once
-    if (ekgData?.length == 1000) {
+    if (ekgData?.length == 10000) {
       ekgData?.removeAt(0);
       _chartSeriesController?.updateDataSource(
         addedDataIndexes: <int>[ekgData!.length - 1],
