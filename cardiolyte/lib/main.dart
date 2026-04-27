@@ -45,7 +45,9 @@ class _MyHomePageState extends State<_MyHomePage> {
       body: Column(
         children: [
           //Initialize the chart widget
-          LiveEkgChart(),
+          Expanded(
+          child:LiveEkgChart(),
+          ),
         ],
       ),
     );
@@ -69,7 +71,7 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
 
   _LiveEkgChartState() {
     _timer = Timer.periodic
-          (const Duration(milliseconds: refreshRateMs),
+          (const Duration(milliseconds: 1000),
         _updateDataSource);
   }
 
@@ -92,7 +94,12 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
     return SfCartesianChart(
       zoomPanBehavior: zoomPanBehavior,
       primaryXAxis: NumericAxis(
-        autoScrollingDelta:shownGraphPoints,
+        minimum: 0,
+        maximum: 10,
+        // initialVisibleMinimum: 0,
+        // initialVisibleMaximum: 100,
+        // autoScrollingDelta:10,
+        // autoScrollingMode:  AutoScrollingMode.end,
       ),
       primaryYAxis: NumericAxis(),
       // Chart title
