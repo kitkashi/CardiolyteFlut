@@ -62,17 +62,15 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
 
   _LiveEkgChartState() {
     _timer = Timer.periodic
-          (const Duration(milliseconds: 200),
+          (const Duration(milliseconds: 50),
         _updateDataSource);
   }
 
   @override
   void initState() {
     ekgData = <EkgSampleData>[
-      EkgSampleData(x: 1, y: 30),
-      // EkgSampleData(x: 3, y: 13),
-      // EkgSampleData(x: 5, y: 80),
-      // EkgSampleData(x: 7, y: 30),
+      //first point
+      EkgSampleData(x: 0, y: 0),
       // EkgSampleData(x: 9, y: 72),
     ];
     super.initState();
@@ -92,7 +90,7 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
           dataSource: ekgData,
           xValueMapper: (EkgSampleData ekgData, _) => ekgData.x,
           yValueMapper: (EkgSampleData ekgData, _) => ekgData.y,
-          // animationDuration: 2,
+          // animationDuration: 100,
           // name: 'Reading',
           // Enable data label
           dataLabelSettings: DataLabelSettings(isVisible: true),
@@ -110,7 +108,7 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
     print(i);
     ekgData?.add(EkgSampleData(x: ++i, y: _getRandomInt(10, 100)));
     //chooses how many points to display on the screen at once
-    if (ekgData?.length == 20) {
+    if (ekgData?.length == 1000) {
       ekgData?.removeAt(0);
       _chartSeriesController?.updateDataSource(
         addedDataIndexes: <int>[ekgData!.length - 1],
