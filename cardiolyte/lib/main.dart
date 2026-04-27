@@ -3,22 +3,17 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
+
 //instantiate random number
 final Random random = Random();
-ChartSeriesController? _chartSeriesController;
-List<EkgSampleData> ekgData = <EkgSampleData>[
-  EkgSampleData(x: 1, y: 30),
-  EkgSampleData(x: 3, y: 13),
-  EkgSampleData(x: 5, y: 80),
-  EkgSampleData(x: 7, y: 30),
-  EkgSampleData(x: 9, y: 72)
-];
 
 void main() {
-  return runApp(_ChartApp());
+  return runApp(MyApp());
 }
 
-class _ChartApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -28,48 +23,106 @@ class _ChartApp extends StatelessWidget {
   }
 }
 
-
-  
 class _MyHomePage extends StatefulWidget {
   // ignore: prefer_const_constructors_in_immutables
-  _MyHomePage({Key? key}) : super(key: key);
+  _MyHomePage({super.key});
+
   @override
   _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<_MyHomePage> {
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
           //Initialize the chart widget
-          SfCartesianChart(
-            primaryXAxis: NumericAxis(),
-            primaryYAxis: NumericAxis(),
-            // Chart title
-            title: ChartTitle(text: 'Ekg Chart'),
-            // Enable tooltip
-            // tooltipBehavior: TooltipBehavior(enable: true),
-            series: <CartesianSeries<EkgSampleData, num>>[
-              LineSeries<EkgSampleData, num>(
-                dataSource: ekgData, 
-                xValueMapper: (EkgSampleData ekgData, _) => ekgData.x,
-                yValueMapper: (EkgSampleData ekgData, _) => ekgData.y,
-                // name: 'Reading',
-                // Enable data label
-                dataLabelSettings: DataLabelSettings(isVisible: true),
-              ),
-            ],
-          ),
+          LiveEkgChart(),
         ],
       ),
     );
   }
-}                        
+}
 
+class LiveEkgChart extends StatefulWidget {
+  const LiveEkgChart({
+    super.key,
+  });
+
+  @override
+  State<LiveEkgChart> createState() => _LiveEkgChartState();
+}
+
+class _LiveEkgChartState extends State<LiveEkgChart> {
+  int i = 0;
+  List<EkgSampleData>? ekgData;
+  ChartSeriesController<EkgSampleData, num>? _chartSeriesController;
+  Timer? _timer;
+
+  _LiveEkgChartState() {
+    _timer = Timer.periodic
+          (const Duration(milliseconds: 200),
+        _updateDataSource);
+  }
+
+  @override
+  void initState() {
+    ekgData = <EkgSampleData>[
+      EkgSampleData(x: 1, y: 30),
+      // EkgSampleData(x: 3, y: 13),
+      // EkgSampleData(x: 5, y: 80),
+      // EkgSampleData(x: 7, y: 30),
+      // EkgSampleData(x: 9, y: 72),
+    ];
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SfCartesianChart(
+      primaryXAxis: NumericAxis(),
+      primaryYAxis: NumericAxis(),
+      // Chart title
+      title: ChartTitle(text: 'Ekg Chart'),
+      // Enable tooltip
+      // tooltipBehavior: TooltipBehavior(enable: true),
+      series: <CartesianSeries<EkgSampleData, num>>[
+        LineSeries<EkgSampleData, num>(
+          dataSource: ekgData,
+          xValueMapper: (EkgSampleData ekgData, _) => ekgData.x,
+          yValueMapper: (EkgSampleData ekgData, _) => ekgData.y,
+          // animationDuration: 2,
+          // name: 'Reading',
+          // Enable data label
+          dataLabelSettings: DataLabelSettings(isVisible: true),
+          //Initialize the onRendererCreated event and store the controller for the respective series
+          onRendererCreated: (ChartSeriesController<EkgSampleData, num> controller) {
+            _chartSeriesController = controller;
+          },
+        ),
+      ],
+    );
+  }
+  void _updateDataSource(Timer _) {
+    print("i am _updateDataSource");
+
+    print(i);
+    ekgData?.add(EkgSampleData(x: ++i, y: _getRandomInt(10, 100)));
+    //chooses how many points to display on the screen at once
+    if (ekgData?.length == 20) {
+      ekgData?.removeAt(0);
+      _chartSeriesController?.updateDataSource(
+        addedDataIndexes: <int>[ekgData!.length - 1],
+        removedDataIndexes: <int>[0],
+      );
+    } else {
+      _chartSeriesController?.updateDataSource(
+        addedDataIndexes: <int>[ekgData!.length - 1],
+      );
+    }
+  }
+}
 
 class EkgSampleData {
   EkgSampleData({this.x, this.y});
@@ -83,26 +136,3 @@ int _getRandomInt(int min, int max) {
 }
 
 /// Continuously updating the data source based on timer.
-void _updateDataSource(Timer timer) {
-  int i=0;
-  ekgData.add(EkgSampleData(x: i++, y: _getRandomInt(10, 100)));
-  if (ekgData.length == 20) {
-    ekgData.removeAt(0);
-    _chartSeriesController?.updateDataSource(
-      addedDataIndexes: <int>[ekgData.length - 1],
-      removedDataIndexes: <int>[0],
-    );
-  } else {
-    _chartSeriesController?.updateDataSource(
-      addedDataIndexes: <int>[ekgData.length - 1],
-    );
-  }
-}                         
-
-Timer? timer;
-
-@override
-void initState() {
-  super.initState();
-  timer = Timer.periodic(const Duration(milliseconds: 100), _updateDataSource);
-}                          
