@@ -704,6 +704,10 @@ class TipsAndEducationPage extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
+                // ── Lead Placement Diagram ────────────────────────────────
+                _LeadPlacementCard(),
+                const SizedBox(height: 8),
+
                 // Section 1 – Understanding EKG
                 _SectionHeader(
                   icon: Icons.monitor_heart_rounded,
@@ -820,6 +824,193 @@ class TipsAndEducationPage extends StatelessWidget {
                 const SizedBox(height: 32),
               ]),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Lead Placement Card ────────────────────────────────────────────────────────
+class _LeadPlacementCard extends StatefulWidget {
+  const _LeadPlacementCard();
+
+  @override
+  State<_LeadPlacementCard> createState() => _LeadPlacementCardState();
+}
+
+class _LeadPlacementCardState extends State<_LeadPlacementCard> {
+  bool _expanded = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: kCardBg,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header row (tap to collapse) ──────────────────────────────
+          GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFE3F2FD), Color(0xFFE8F5E9)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.vertical(
+                  top: const Radius.circular(16),
+                  bottom: _expanded ? Radius.zero : const Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.cable_rounded,
+                      color: Color(0xFF0288D1),
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Electrode Placement Guide',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: kTextDark,
+                          ),
+                        ),
+                        Text(
+                          'Lead I, II & III positioning',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: kTextMuted,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 250),
+                    child: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: kTextMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Image + disclaimer ─────────────────────────────────────────
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 300),
+            crossFadeState: _expanded
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Column(
+              children: [
+                Divider(color: kDivider, height: 1),
+                // Diagram image
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(0),
+                  ),
+                  child: Image.asset(
+                    'assets/images/lead_placement.png',
+                    width: double.infinity,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      // Graceful fallback if asset path not yet configured
+                      return Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        color: const Color(0xFFF5F5F5),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.image_not_supported_rounded,
+                              color: Colors.grey[400],
+                              size: 48,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Add lead_placement.png to\nassets/images/ and declare\nit in pubspec.yaml',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                // Disclaimer banner
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE3F2FD),
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(16),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Icon(
+                        Icons.info_rounded,
+                        color: Color(0xFF0288D1),
+                        size: 16,
+                      ),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Electrode placement may vary slightly based on patient anatomy and clinical setting. Always follow local protocol and device guidelines.',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: Color(0xFF01579B),
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            secondChild: const SizedBox(width: double.infinity),
           ),
         ],
       ),
