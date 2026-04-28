@@ -1,18 +1,17 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
-//1000 ms in a second
-//suggested is 100HZ
+//100 ms in a second is .010 seconds, suggested is 100HZ == 0.01 sec
 const int refreshRateMs = 10;
-//100 points shown a second
-//i want to show a 10 second strip
-const int secondsDisplayed = 5;
-const int shownGraphPoints = (refreshRateMs * 10) * (secondsDisplayed);
-//instantiate random number
+const int refreshRateHz = refreshRateMs * 10;
+//100 points shown a second i want to show a 4 second strip
+const int secondsDisplayed = 4;
+const int convertToSeconds = 1000;
+//Points per second (Hz) * seconds I want displayed = total graph points
+const int shownGraphPoints = (refreshRateHz) * (secondsDisplayed);
 final Random random = Random();
 
 void main() {
@@ -63,6 +62,12 @@ class _MyHomePageState extends State<_MyHomePage> {
   }
 
   @override
+  void dispose() {
+    _adapterStateStateSubscription.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
@@ -83,55 +88,61 @@ class LiveEkgChart extends StatefulWidget {
 }
 
 class _LiveEkgChartState extends State<LiveEkgChart> {
-  int i = 0;
-  late List<EkgSampleData>? ekgData;
+  late int _currentNumPoints;
+  late List<EkgSampleData> _ekgData;
   ChartSeriesController<EkgSampleData, num>? _chartSeriesController;
-  Timer? _timer;
+  late ZoomPanBehavior _zoomPanBehavior;
 
-  _LiveEkgChartState() {
-    _timer = Timer.periodic(
-      const Duration(milliseconds: 1000),
-      _updateDataSource,
-    );
-  }
-
-  late ZoomPanBehavior zoomPanBehavior;
+  late bool _scrollEnabled;
 
   @override
   void initState() {
-    ekgData = <EkgSampleData>[
-      //first point
-      EkgSampleData(x: 0, y: 0),
-      // EkgSampleData(x: 9, y: 72),
-    ];
-    zoomPanBehavior = ZoomPanBehavior(enablePanning: true);
     super.initState();
+
+    _currentNumPoints = 0;
+    _ekgData = [EkgSampleData(x: 0, y: 0)];
+
+    _zoomPanBehavior = ZoomPanBehavior(enablePanning: true);
+    _scrollEnabled = false;
+
+    // Start this *after* initializing everything else
+    Timer.periodic(Duration(milliseconds: 10), _updateDataSource);
+  }
+
+  void _enableScroll() {
+    setState(() {
+      _scrollEnabled = true;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    double? maximum;
+    int? autoScrollingDelta;
+    if (_scrollEnabled) {
+      maximum = null;
+      autoScrollingDelta = shownGraphPoints;
+    } else {
+      maximum = shownGraphPoints.toDouble();
+      autoScrollingDelta = null;
+    }
+
     return SfCartesianChart(
-      zoomPanBehavior: zoomPanBehavior,
+      zoomPanBehavior: _zoomPanBehavior,
+
       primaryXAxis: NumericAxis(
-        // minimum: 0,
-        // maximum: 10,
-        // initialVisibleMinimum: 0,
-        // initialVisibleMaximum: 100,
-        // autoScrollingDelta:10,
-        // autoScrollingMode:  AutoScrollingMode.end,
+        maximum: maximum,
+        autoScrollingDelta: autoScrollingDelta,
       ),
       primaryYAxis: NumericAxis(),
-      // Chart title
+
       title: ChartTitle(text: 'Ekg Chart'),
-      // Enable tooltip
-      // tooltipBehavior: TooltipBehavior(enable: true),
+
       series: <CartesianSeries<EkgSampleData, num>>[
         LineSeries<EkgSampleData, num>(
-          dataSource: ekgData,
+          dataSource: _ekgData,
           xValueMapper: (EkgSampleData ekgData, _) => ekgData.x,
           yValueMapper: (EkgSampleData ekgData, _) => ekgData.y,
-          // animationDuration: 100,
-          // name: 'Reading',
           // Enable data label
           dataLabelSettings: DataLabelSettings(isVisible: true),
           //Initialize the onRendererCreated event and store the controller for the respective series
@@ -144,21 +155,18 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
     );
   }
 
-  void _updateDataSource(Timer _) {
-    print(i);
-    ekgData?.add(EkgSampleData(x: ++i, y: _getRandomInt(10, 100)));
-    //chooses how many points to display on the screen at once
-    if (ekgData?.length == 10000) {
-      ekgData?.removeAt(0);
-      _chartSeriesController?.updateDataSource(
-        addedDataIndexes: <int>[ekgData!.length - 1],
-        removedDataIndexes: <int>[0],
-      );
-    } else {
-      _chartSeriesController?.updateDataSource(
-        addedDataIndexes: <int>[ekgData!.length - 1],
-      );
+  /// Continuously updating the data source based on timer.
+  void _updateDataSource(Timer? _) {
+    if (_currentNumPoints > shownGraphPoints) {
+      _enableScroll();
     }
+
+    _ekgData.add(
+      EkgSampleData(x: ++_currentNumPoints, y: _getRandomInt(10, 100)),
+    );
+    _chartSeriesController?.updateDataSource(
+      addedDataIndexes: <int>[_ekgData.length - 1],
+    );
   }
 }
 
