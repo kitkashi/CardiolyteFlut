@@ -3,24 +3,31 @@ import 'dart:math';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 //1000 ms in a second
 //suggested is 100HZ
-const int refreshRateMs=10;
+const int refreshRateMs = 10;
 //100 points shown a second
 //i want to show a 10 second strip
-const int secondsDisplayed=5;
-const int shownGraphPoints=(refreshRateMs*10)*(secondsDisplayed);
+const int secondsDisplayed = 5;
+const int shownGraphPoints = (refreshRateMs * 10) * (secondsDisplayed);
 //instantiate random number
 final Random random = Random();
 
 void main() {
+  FlutterBluePlus.setLogLevel(LogLevel.verbose, color: true);
   return runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -39,15 +46,29 @@ class _MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<_MyHomePage> {
+  BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
+  late StreamSubscription<BluetoothAdapterState> _adapterStateStateSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _adapterStateStateSubscription = FlutterBluePlus.adapterState.listen((
+      state,
+    ) {
+      _adapterState = state;
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
           //Initialize the chart widget
-          Expanded(
-          child:LiveEkgChart(),
-          ),
+          Expanded(child: LiveEkgChart()),
         ],
       ),
     );
@@ -55,9 +76,7 @@ class _MyHomePageState extends State<_MyHomePage> {
 }
 
 class LiveEkgChart extends StatefulWidget {
-  const LiveEkgChart({
-    super.key,
-  });
+  const LiveEkgChart({super.key});
 
   @override
   State<LiveEkgChart> createState() => _LiveEkgChartState();
@@ -70,12 +89,14 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
   Timer? _timer;
 
   _LiveEkgChartState() {
-    _timer = Timer.periodic
-          (const Duration(milliseconds: 1000),
-        _updateDataSource);
+    _timer = Timer.periodic(
+      const Duration(milliseconds: 1000),
+      _updateDataSource,
+    );
   }
 
   late ZoomPanBehavior zoomPanBehavior;
+
   @override
   void initState() {
     ekgData = <EkgSampleData>[
@@ -83,9 +104,7 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
       EkgSampleData(x: 0, y: 0),
       // EkgSampleData(x: 9, y: 72),
     ];
-    zoomPanBehavior = ZoomPanBehavior(
-        enablePanning: true
-    );
+    zoomPanBehavior = ZoomPanBehavior(enablePanning: true);
     super.initState();
   }
 
@@ -94,8 +113,8 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
     return SfCartesianChart(
       zoomPanBehavior: zoomPanBehavior,
       primaryXAxis: NumericAxis(
-        minimum: 0,
-        maximum: 10,
+        // minimum: 0,
+        // maximum: 10,
         // initialVisibleMinimum: 0,
         // initialVisibleMaximum: 100,
         // autoScrollingDelta:10,
@@ -116,13 +135,15 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
           // Enable data label
           dataLabelSettings: DataLabelSettings(isVisible: true),
           //Initialize the onRendererCreated event and store the controller for the respective series
-          onRendererCreated: (ChartSeriesController<EkgSampleData, num> controller) {
-            _chartSeriesController = controller;
-          },
+          onRendererCreated:
+              (ChartSeriesController<EkgSampleData, num> controller) {
+                _chartSeriesController = controller;
+              },
         ),
       ],
     );
   }
+
   void _updateDataSource(Timer _) {
     print(i);
     ekgData?.add(EkgSampleData(x: ++i, y: _getRandomInt(10, 100)));
