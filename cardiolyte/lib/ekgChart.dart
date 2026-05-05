@@ -1,9 +1,8 @@
-import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:cardiolyte/main.dart';
+import 'package:cardiolyte/BleService.dart';
 
 class LiveEkgPage extends StatelessWidget {
   const LiveEkgPage({super.key});

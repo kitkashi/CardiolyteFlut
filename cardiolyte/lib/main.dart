@@ -1,14 +1,10 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:cardiolyte/BleService.dart';
 import 'package:cardiolyte/infoPage.dart';
+import 'package:cardiolyte/ekgChart.dart';
 
 // Constants
-// X-axis values are millisecond timestamps from the BLE device.
-// Show a 10-second window: 10s × 1000ms = 10,000 ms range.
 const int secondsDisplayed = 10;
 const int shownRangeOfXValues = secondsDisplayed * 1000;
 
@@ -26,7 +22,7 @@ void main() {
   runApp(const CardioLyteApp());
 }
 
-//  ROOT APP
+// ── ROOT APP ───────────────────────────────────────────────────────────────────
 class CardioLyteApp extends StatelessWidget {
   const CardioLyteApp({super.key});
 
@@ -45,7 +41,7 @@ class CardioLyteApp extends StatelessWidget {
   }
 }
 
-//  HOME PAGE
+// ── HOME PAGE ──────────────────────────────────────────────────────────────────
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -53,22 +49,80 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  //Innitializing Bluetooth
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
+  // Bluetooth
   BluetoothAdapterState _adapterState = BluetoothAdapterState.unknown;
-  late StreamSubscription<BluetoothAdapterState> _sub;
+  late StreamSubscription<BluetoothAdapterState> _btSub;
+
+  // Heartbeat animation
+  late AnimationController _heartController;
+  late Animation<double> _heartScale;
 
   @override
   void initState() {
     super.initState();
-    _sub = FlutterBluePlus.adapterState.listen((s) {
+
+    _btSub = FlutterBluePlus.adapterState.listen((s) {
       if (mounted) setState(() => _adapterState = s);
     });
+
+    // Two-beat "lub-dub" heartbeat: scale up → down → up → down → rest
+    _heartController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+
+    _heartScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.0,
+          end: 1.20,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 15,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.20,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 15,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.0,
+          end: 1.13,
+        ).chain(CurveTween(curve: Curves.easeOut)),
+        weight: 10,
+      ),
+      TweenSequenceItem(
+        tween: Tween(
+          begin: 1.13,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeIn)),
+        weight: 10,
+      ),
+      TweenSequenceItem(
+        tween: ConstantTween(1.0),
+        weight: 50,
+      ), // rest before next beat
+    ]).animate(_heartController);
+
+    // Repeat with a pause between beats
+    _heartController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) _heartController.forward(from: 0.0);
+        });
+      }
+    });
+    _heartController.forward();
   }
 
   @override
   void dispose() {
-    _sub.cancel();
+    _btSub.cancel();
+    _heartController.dispose();
     super.dispose();
   }
 
@@ -80,83 +134,145 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: kBackground,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ── App branding ─────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.only(bottom: 28),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: kPrimary,
-                        borderRadius: BorderRadius.circular(10),
+              // ── Info icon top-right ─────────────────────────────────────
+              Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: kPrimary.withOpacity(0.12),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                      child: const Icon(
-                        Icons.favorite,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      'CardioLyte',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: kTextDark,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ── START Reading card ────────────────────────────────────────
-              _StartReadingCard(bluetoothOn: _bluetoothOn),
-              const SizedBox(height: 16),
-
-              // ── Past Readings card ────────────────────────────────────────
-              _NavCard(
-                icon: Icons.history_rounded,
-                iconBgColor: const Color(0xFFFFE4F0),
-                iconColor: kPrimary,
-                title: 'Past Readings',
-                subtitle: 'View your ECG history',
-                trailingWidget: _EkgMiniIcon(color: kPrimary.withOpacity(0.4)),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Past Readings coming soon')),
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Tips & Education card
-              _NavCard(
-                icon: Icons.menu_book_rounded,
-                iconBgColor: const Color(0xFFE8F4FD),
-                iconColor: const Color(0xFF2196F3),
-                title: 'Tips & Education',
-                subtitle: 'Learn about heart health',
-                trailingWidget: _EkgMiniIcon(
-                  color: const Color(0xFF2196F3).withOpacity(0.4),
-                ),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const TipsAndEducationPage(),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.info_outline_rounded,
+                    color: kTextMuted,
+                    size: 18,
                   ),
                 ),
               ),
 
               const Spacer(),
 
-              // ── Bluetooth status pill ─────────────────────────────────────
+              // ── Beating heart + branding ────────────────────────────────
+              Column(
+                children: [
+                  // Pulsing outer ring
+                  _PulsingRing(
+                    child: ScaleTransition(
+                      scale: _heartScale,
+                      child: Container(
+                        width: 110,
+                        height: 110,
+                        decoration: const BoxDecoration(
+                          gradient: RadialGradient(
+                            colors: [Color(0xFFFF6FB7), kPrimary],
+                            center: Alignment.topLeft,
+                            radius: 1.4,
+                          ),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0x55E91E8C),
+                              blurRadius: 28,
+                              offset: Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.favorite,
+                          color: Colors.white,
+                          size: 52,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // App name
+                  const Text(
+                    'CardioLyte',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: kTextDark,
+                      letterSpacing: -0.8,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Professional ECG Monitoring',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: kTextMuted,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+
+              const Spacer(),
+
+              // ── Three action buttons ────────────────────────────────────
+              _PrimaryActionButton(
+                label: 'Start Reading',
+                icon: Icons.play_arrow_rounded,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LiveEkgPage()),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: _SecondaryActionButton(
+                      icon: Icons.history_rounded,
+                      label: 'Past Readings',
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Past Readings coming soon'),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: _SecondaryActionButton(
+                      icon: Icons.menu_book_rounded,
+                      label: 'Tips & Education',
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TipsAndEducationPage(),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 28),
+
+              // ── Bluetooth status pill ───────────────────────────────────
               Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -177,7 +293,8 @@ class _HomePageState extends State<HomePage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 400),
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
@@ -209,143 +326,119 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// ── START Reading gradient card ────────────────────────────────────────────────
-class _StartReadingCard extends StatelessWidget {
-  const _StartReadingCard({required this.bluetoothOn});
+// ── Pulsing soft ring behind the heart ────────────────────────────────────────
+class _PulsingRing extends StatefulWidget {
+  const _PulsingRing({required this.child});
 
-  final bool bluetoothOn;
+  final Widget child;
+
+  @override
+  State<_PulsingRing> createState() => _PulsingRingState();
+}
+
+class _PulsingRingState extends State<_PulsingRing>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat();
+
+    _scale = Tween(
+      begin: 1.0,
+      end: 1.55,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _opacity = Tween(
+      begin: 0.35,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const LiveEkgPage()),
-      ),
-      child: Container(
-        height: 140,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFE91E8C), Color(0xFFFF6FB7)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return SizedBox(
+      width: 160,
+      height: 160,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          AnimatedBuilder(
+            animation: _ctrl,
+            builder: (_, __) => Transform.scale(
+              scale: _scale.value,
+              child: Container(
+                width: 110,
+                height: 110,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: kPrimary.withOpacity(_opacity.value),
+                ),
+              ),
+            ),
           ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: kPrimary.withOpacity(0.35),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -20,
-              top: -20,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.08),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 20,
-              bottom: -30,
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.08),
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Row(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.25),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.play_arrow_rounded,
-                      color: Colors.white,
-                      size: 36,
-                    ),
-                  ),
-                  const SizedBox(width: 20),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'START',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.5,
-                          height: 1.0,
-                        ),
-                      ),
-                      Text(
-                        'Reading',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                          height: 1.2,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Begin your ECG analysis now',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
+          widget.child,
+        ],
+      ),
+    );
+  }
+}
+
+// ── Feature chip ──────────────────────────────────────────────────────────────
+class _FeatureChip extends StatelessWidget {
+  const _FeatureChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: kDivider, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 13,
+          color: kTextDark,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
   }
 }
 
-// ── Generic nav card ───────────────────────────────────────────────────────────
-class _NavCard extends StatelessWidget {
-  const _NavCard({
+// ── Primary "Get Started"-style button ────────────────────────────────────────
+class _PrimaryActionButton extends StatelessWidget {
+  const _PrimaryActionButton({
+    required this.label,
     required this.icon,
-    required this.iconBgColor,
-    required this.iconColor,
-    required this.title,
-    required this.subtitle,
-    required this.trailingWidget,
     required this.onTap,
   });
 
+  final String label;
   final IconData icon;
-  final Color iconBgColor;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final Widget trailingWidget;
   final VoidCallback onTap;
 
   @override
@@ -353,55 +446,36 @@ class _NavCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        height: 58,
         decoration: BoxDecoration(
-          color: kCardBg,
-          borderRadius: BorderRadius.circular(20),
+          gradient: const LinearGradient(
+            colors: [Color(0xFFE91E8C), Color(0xFFFF6FB7)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: kPrimary.withOpacity(0.38),
+              blurRadius: 18,
+              offset: const Offset(0, 7),
             ),
           ],
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: iconBgColor,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(icon, color: iconColor, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: kTextDark,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: kTextMuted,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
+            Icon(icon, color: Colors.white, size: 22),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
               ),
             ),
-            trailingWidget,
           ],
         ),
       ),
@@ -409,7 +483,58 @@ class _NavCard extends StatelessWidget {
   }
 }
 
-// ── Tiny ECG squiggle icon ─────────────────────────────────────────────────────
+// ── Secondary outline button ───────────────────────────────────────────────────
+class _SecondaryActionButton extends StatelessWidget {
+  const _SecondaryActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: kDivider, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: kPrimary, size: 22),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: kTextDark,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Tiny ECG squiggle icon (kept for potential reuse) ─────────────────────────
 class _EkgMiniIcon extends StatelessWidget {
   const _EkgMiniIcon({required this.color});
 
@@ -458,7 +583,3 @@ class _EkgPainter extends CustomPainter {
   @override
   bool shouldRepaint(_EkgPainter old) => old.color != color;
 }
-
-// ═══════════════════════════════════════════════════════════════════════════════
-//  LIVE EKG PAGE
-// ═══════════════════════════════════════════════════════════════════════════════
