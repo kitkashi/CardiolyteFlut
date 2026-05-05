@@ -93,13 +93,13 @@ class BleService {
     }
 
     // --- Connection ---
-    // await device.connectAndUpdateStream().catchError((e) {
-    //   Snackbar.show(
-    //     ABC.c,
-    //     prettyException("Connect Error:", e),
-    //     success: false,
-    //   );
-    // });
+    await device.connectAndUpdateStream().catchError((e) {
+      Snackbar.show(
+        ABC.c,
+        prettyException("Connect Error:", e),
+        success: false,
+      );
+    });
 
     // --- Getting services ---
 

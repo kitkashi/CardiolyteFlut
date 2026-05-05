@@ -1,4 +1,5 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:cardiolyte/main.dart';
@@ -45,6 +46,7 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
   late List<EkgSampleData> _ekgData;
   ChartSeriesController<EkgSampleData, num>? _chartSeriesController;
   late ZoomPanBehavior _zoomPanBehavior;
+
   late bool _scrollEnabled;
   late BleService bleService;
 
@@ -62,7 +64,7 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
     _scrollEnabled = false;
 
     bleService.scanForDevice().then(
-      (_) => bleService.connectAndSubscribeToDevice(),
+      (value) => bleService.connectAndSubscribeToDevice(),
     );
   }
 
@@ -72,6 +74,9 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
 
   @override
   Widget build(BuildContext context) {
+    // Force a maximum X value when there is less than 1 screen worth of points,
+    // so that the graph doesn't awkwardly dynamically resize itself at the start
+    // of the EKG reading.
     final double? maximum;
     final int? autoScrollingDelta;
 
@@ -118,7 +123,7 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
           ),
         ),
 
-        // ── Chart ───────────────────────────────────────────────────────
+        // Chart
         Expanded(
           child: SfCartesianChart(
             zoomPanBehavior: _zoomPanBehavior,
@@ -156,8 +161,11 @@ class _LiveEkgChartState extends State<LiveEkgChart> {
                 color: kPrimary,
                 width: 2,
                 animationDuration: 0,
-                onRendererCreated: (controller) =>
-                    _chartSeriesController = controller,
+                //Initialize the onRendererCreated event and store the controller for the respective series
+                onRendererCreated:
+                    (ChartSeriesController<EkgSampleData, num> controller) {
+                      _chartSeriesController = controller;
+                    },
               ),
             ],
           ),
