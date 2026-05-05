@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:cardiolyte/main.dart';
+import 'package:cardiolyte/ekgChart.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 // import '../utils/extra.dart';

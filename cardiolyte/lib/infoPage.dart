@@ -198,7 +198,7 @@ class TipsAndEducationPage extends StatelessWidget {
   }
 }
 
-// ── Lead Placement Card ────────────────────────────────────────────────────────
+// Lead Placement Card
 class _LeadPlacementCard extends StatefulWidget {
   const _LeadPlacementCard();
 
