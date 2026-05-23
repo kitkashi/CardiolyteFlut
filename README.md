@@ -57,6 +57,7 @@ My device schematic ended up looking somewhat like this.
 You can optionally create a CAD case and 3d print it with PLA, there is no shorting with the plastic, and the signal is relatively clear. 
 
 
-<img width="554" height="354" alt="image" src="https://github.com/user-attachments/assets/208af18b-beba-452e-bff7-c3a1d885aa50" />
+<img width="709" height="630" alt="image" src="https://github.com/user-attachments/assets/98bbf225-5d6d-49c7-8dc6-f59e1fa3a8ed" />
+
 
 Here is my finished product.
