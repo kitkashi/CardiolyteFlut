@@ -1,17 +1,3 @@
-# cardiolyte
+This is a bluetooth display device for data sent over BLE to Flutter app. Currently it searches for about 15 seconds and searches for devices with the names "Cardiolyte", "Pi Pico", "ESP" and this is searched in BleService. 
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The timeout can be shortened and the name of device can be changed if you chose a different device name in this file.
