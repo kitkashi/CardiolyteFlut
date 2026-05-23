@@ -39,7 +39,7 @@ Test sending the analogoutput and the time of the reading from the Microcontroll
 
 You can utilize the Arduino IDE's BLE, platformIO, etc. just ensure that it works before the next step.
 
-## Step Three: Connecting Batteries to Microcontroller
+### Step Three: Connecting Batteries to Microcontroller
 
 Make sure to charge the batteries and test them with a multi meter at the output, and check the voltage output is okay for your microcontrollers voltage in range.
 
