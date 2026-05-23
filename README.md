@@ -50,8 +50,9 @@ Test to see if your battery can power your microcontroller and AD8232 before sol
 **MAKE SURE YOU ARE ABSOLUTELY CERTAIN THE SIGNAL IS CLEAR AND THE BLE WORKS BEFOREHAND!**
 
 **YOU WILL BE UNABLE TO PLUG INTO YOUR MICROCONTROLLER ONCE THE BATTERY POWERS IT FOR RISK OF **SHORTING YOUR LAPTOP OR THE DEVICE****
-**
-My device schematic ended up looking somewhat like this. 
+
+
+My device schematic ended up looking somewhat like this, but definitely reverify this with the datasheet of your own personal microcontroller, DO NOT COPY THIS PINOUT IT IS NOT EXACTLY CORRECT!
 
 <img width="554" height="354" alt="image" src="https://github.com/user-attachments/assets/9eaa6e13-e261-4e7e-a47f-e4e94b628b1d" />
 
