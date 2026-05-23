@@ -45,16 +45,18 @@ Make sure to charge the batteries and test them with a multi meter at the output
 
 Test to see if your battery can power your microcontroller and AD8232 before soldering!
 
-**MAKE SURE YOU ARE ABSOLUTELY CERTAIN THE SIGNAL IS CLEAR AND THE BLE WORKS BEFOREHAND!**
-
-**YOU WILL BE UNABLE TO PLUG INTO YOUR MICROCONTROLLER ONCE THE BATTERY POWERS IT**
-
+_**MAKE SURE YOU ARE ABSOLUTELY CERTAIN THE SIGNAL IS CLEAR AND THE BLE WORKS BEFOREHAND!**
+_
+_**YOU WILL BE UNABLE TO PLUG INTO YOUR MICROCONTROLLER ONCE THE BATTERY POWERS IT**
+_
 My device schematic ended up looking somewhat like this. 
 
 <img width="554" height="354" alt="image" src="https://github.com/user-attachments/assets/9eaa6e13-e261-4e7e-a47f-e4e94b628b1d" />
 
+
 You can optionally create a CAD case and 3d print it with PLA, there is no shorting with the plastic, and the signal is relatively clear. 
 
-<img width="720" height="930" alt="image" src="https://github.com/user-attachments/assets/208af18b-beba-452e-bff7-c3a1d885aa50" />
+
+<img width="554" height="354" alt="image" src="https://github.com/user-attachments/assets/208af18b-beba-452e-bff7-c3a1d885aa50" />
 
 Here is my finished product.
