@@ -4,8 +4,8 @@ If you are more interested in __software__, feel free to click on the cardiolyte
 
 Otherwise, lets get started with the **DIY EKG monitor hardware tutorial**!
 
-**PARTS**
-- 
+# PARTS
+
 Here is a general list of what will be needed: 
 1. Wet Electrodes 
 2. Microcontroller with BLE capabilites, AnalogIN, 3.3V Out, and multiple grounds for battery and board (I would reccommend a raspberry pi pico)
@@ -24,22 +24,22 @@ I also got an ESP32 in this list, but the bluetooth writing was a bit difficult 
 
 
 
-**ASSEMBLY**
--
+# ASSEMBLY
+
 First for the parts, I would reccomend reading over SparkFun's Tutorial online, https://learn.sparkfun.com/tutorials/ad8232-heart-rate-monitor-hookup-guide/all.
 
-**Step One** Testing the AD8232 Board:
+## Step One Testing the AD8232 Board:
 
 Connect the ground, 3.3V and analog output on the AD8232 onto their respective pins on the pi pico/microcontroller you picked out. Reference a datasheet beforehand to ensure they are in the proper place!
 
 Test the PiPico with the AD8232 using Arduino IDE 1.**.** version (very important! The new 2.0 IDE has issues with displaying multiple points at a time. Setup a serial read and print at the pin you assigned the output to on the AD8232 and open the plot/graph to see if you can get a proper signal with the clarifying board. 
 
-**Step Two** Testing bluetooth:
+## Step Two Testing bluetooth:
 Test sending the analogoutput and the time of the reading from the Microcontroller to the app.
 
 You can utilize the Arduino IDE's BLE, platformIO, etc. just ensure that it works before the next step.
 
-**Step Three** Connecting Batteries to Microcontroller:
+## Step Three Connecting Batteries to Microcontroller:
 
 Make sure to charge the batteries and test them with a multi meter at the output, and check the voltage output is okay for your microcontrollers voltage in range.
 
