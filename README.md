@@ -36,7 +36,7 @@ Connect the ground, 3.3V and analog output on the AD8232 onto their respective p
 
 Test the PiPico with the AD8232 using Arduino IDE 1.**.** version (very important! The new 2.0 IDE has issues with displaying multiple points at a time. Setup a serial read and print at the pin you assigned the output to on the AD8232 and open the plot/graph to see if you can get a proper signal with the clarifying board. 
 
-### Step Two: Testing bluetooth
+### Step Two: Testing Bluetooth
 Test sending the analogoutput and the time of the reading from the Microcontroller to the app.
 
 You can utilize the Arduino IDE's BLE, platformIO, etc. just ensure that it works before the next step.
