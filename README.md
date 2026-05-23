@@ -1,3 +1,5 @@
+<img width="794" height="411" alt="image" src="https://github.com/user-attachments/assets/f7422c87-2125-4638-bca8-7ade8859f509" />
+
 This readme is for the hardware creation of a portable EKG for under 50$!
 
 If you are more interested in __software__, feel free to click on the cardiolyte folder above in order to see the source code.
